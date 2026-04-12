@@ -1,0 +1,23 @@
+# Directorios de compilación
+/_build/
+/deps/
+/cover/
+
+# Archivos del editor y entorno
+/.elixir_ls/
+/.vscode/
+/.idea/
+
+# Archivos temporales
+*.log
+*.tmp
+*.swp
+*~
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de respaldo
+*.backup
+*.bak
