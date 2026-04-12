@@ -1,0 +1,1 @@
+#genserver cada propiedad

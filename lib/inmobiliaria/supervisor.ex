@@ -1,0 +1,1 @@
+#dynamic supervisor para propiedades
