@@ -1,102 +1,64 @@
 defmodule Inmobiliaria.CLI do
   def start do
-    IO.puts("\n ===== INMOBILIARIA UQ =====")
-    IO.puts("Comandos disponibles:")
-    IO.puts("  register <usuario> <contraseña> <rol>")
-    IO.puts("  connect <usuario> <contraseña>")
-    IO.puts("  disconnect")
-    IO.puts("  online")
-    IO.puts("  exit")
-    IO.puts("================================\n")
-
-    loop(%{current_user: nil})
+    # Imprime el banner de bienvenida
+    IO.puts """
+    ==================================================
+    ¡BIENVENIDO A LA INMOBILIARIA VIRTUAL!
+    ==================================================
+    Estado: Conectado al nodo #{node()}
+    Comandos:
+      > register <usuario> <clave> <rol>
+      > connect <usuario> <clave>
+      > online
+      > exit
+    --------------------------------------------------
+    """
+    loop(nil)
   end
 
-  defp loop(state) do
-    prompt = if state.current_user do
-      "#{state.current_user}> "
-    else
-      "> "
-    end
+  defp loop(username) do
+    prompt = if username, do: "#{username}> ", else: "> "
 
-    IO.write(prompt)
-    input = IO.gets("") |> String.trim()
+    input = IO.gets(prompt)
+            |> String.trim()
+            |> String.split(" ", trim: true)
 
-    case String.split(input) do
-      ["register", username, password, role] ->
-        handle_register(username, password, role)
-        loop(state)
-
-      ["connect", username, password] ->
-        new_state = handle_connect(username, password, state)
-        loop(new_state)
-
-      ["disconnect"] ->
-        new_state = handle_disconnect(state)
-        loop(new_state)
-
-      ["online"] ->
-        handle_online()
-        loop(state)
-
-      ["exit"] ->
-        if state.current_user do
-          Inmobiliaria.UserManager.disconnect(state.current_user)
-        end
-        IO.puts("¡Hasta luego!")
-
-      [""] ->
-        loop(state)
-
-      _ ->
-        IO.puts("Comando no reconocido")
-        loop(state)
+    case process_input(input, username) do
+      {:ok, :exit} ->
+        IO.puts("Saliendo del sistema...")
+      {:ok, new_user, msg} ->
+        IO.puts(msg)
+        loop(new_user)
+      {:error, reason} ->
+        IO.puts("Error: #{reason}")
+        loop(username)
     end
   end
 
-  defp handle_register(username, password, role) do
-    # Validar rol
-    valid_roles = ["cliente", "vendedor", "arrendador"]
-    if role in valid_roles do
-      case Inmobiliaria.UserManager.register(username, password, role) do
-        {:ok, msg} -> IO.puts(" #{msg}")
-        {:error, msg} -> IO.puts(" #{msg}")
-      end
-    else
-      IO.puts("Rol inválido. Use: cliente, vendedor o arrendador")
+  # Lógica interna del CLI
+  defp process_input(["register", u, p, r], user) do
+    case Inmobiliaria.UserManager.register(u, p, r) do
+      {:ok, msg} -> {:ok, user, "✓ #{msg}"}
+      {:error, err} -> {:error, err}
     end
   end
 
-  defp handle_connect(username, password, state) do
-    case Inmobiliaria.UserManager.connect(username, password) do
-      {:ok, msg} ->
-        IO.puts("#{msg}")
-        %{state | current_user: username}
-
-      {:error, msg} ->
-        IO.puts("#{msg}")
-        state
+  defp process_input(["connect", u, p], _user) do
+    case Inmobiliaria.UserManager.login(u, p) do
+      {:ok, role} -> {:ok, u, "✓ Bienvenido #{u}. Rol: #{role}"}
+      {:error, err} -> {:error, err}
     end
   end
 
-  defp handle_disconnect(state) do
-    if state.current_user do
-      Inmobiliaria.UserManager.disconnect(state.current_user)
-      IO.puts("Desconectado")
-      %{state | current_user: nil}
-    else
-      IO.puts("No hay usuario conectado")
-      state
-    end
+  defp process_input(["online"], user) do
+    lista = Inmobiliaria.UserManager.online_users()
+    {:ok, user, "Usuarios en línea: #{Enum.join(lista, ", ")}"}
   end
 
-  defp handle_online do
-    online_users = Inmobiliaria.UserManager.get_online_users()
-    if online_users == [] do
-      IO.puts("No hay usuarios conectados")
-    else
-      IO.puts("Usuarios conectados:")
-      Enum.each(online_users, fn user -> IO.puts("  - #{user}") end)
-    end
+  defp process_input(["exit"], user) do
+    if user, do: Inmobiliaria.UserManager.logout(user)
+    {:ok, :exit}
   end
+
+  defp process_input(_, _user), do: {:error, "Comando desconocido"}
 end

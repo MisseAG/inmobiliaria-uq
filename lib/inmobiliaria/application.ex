@@ -3,8 +3,6 @@ defmodule Inmobiliaria.Application do
 
   @impl true
   def start(_type, _args) do
-    Inmobiliaria.FileStorage.init()
-
     children = [
       Inmobiliaria.UserManager
     ]

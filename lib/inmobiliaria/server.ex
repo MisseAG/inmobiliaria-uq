@@ -1,1 +1,0 @@
-# servidor principal y comandos
