@@ -100,13 +100,13 @@ defmodule Inmobiliaria.UserManager do
     File.write!(@data_file, content)
   end
 
- defp parse_line(line) do
-  [uname, pass, role, score] =
-    line
-    |> String.trim()
-    |> String.split(";")
-    |> Enum.map(&String.trim/1)
+  defp parse_line(line) do
+    [uname, pass, role, score] =
+      line
+      |> String.trim()
+      |> String.split(";")
+      |> Enum.map(&String.trim/1)
 
-  {uname, %{password: pass, role: role, score: String.to_integer(score)}}
-end
+    {uname, %{password: pass, role: role, score: String.to_integer(score)}}
+  end
 end
