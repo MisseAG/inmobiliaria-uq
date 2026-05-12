@@ -2,6 +2,7 @@
 /_build/
 /deps/
 /cover/
+/doc/
 
 # Archivos del editor y entorno
 /.elixir_ls/

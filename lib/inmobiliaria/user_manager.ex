@@ -25,6 +25,15 @@ defmodule Inmobiliaria.UserManager do
   def online_users do
     GenServer.call({:global, __MODULE__}, :online_users)
   end
+
+  def add_score(username, points) do
+    GenServer.call({:global, __MODULE__}, {:add_score, username, points})
+  end
+
+  def ranking do
+    GenServer.call({:global, __MODULE__}, :ranking)
+  end
+
   # --- Callbacks del servidor ---
   @impl true
   def init(_) do
@@ -73,12 +82,36 @@ defmodule Inmobiliaria.UserManager do
   end
 
   @impl true
+  def handle_call({:add_score, username, points}, _from, state) do
+    cond do
+      not Map.has_key?(state.users, username) ->
+        {:reply, {:error, "Usuario no existe"}, state}
+      true ->
+        user = state.users[username]
+        new_score = user.score + points
+        updated_user = %{user | score: new_score}
+        new_users = Map.put(state.users, username, updated_user)
+        save_users(new_users)
+        {:reply, {:ok, new_score}, %{state | users: new_users}}
+    end
+  end
+
+  @impl true
+  def handle_call(:ranking, _from, state) do
+    ranking_list = state.users
+      |> Enum.map(fn {uname, data} -> {uname, data.score} end)
+      |> Enum.sort(fn {_, score1}, {_, score2} -> score1 >= score2 end)
+
+    {:reply, {:ok, ranking_list}, state}
+  end
+
+  @impl true
   def handle_cast({:logout, username}, state) do
     new_online = Map.delete(state.online, username)
     {:noreply, %{state | online: new_online}}
   end
 
-  # --- Persistencia simple ---
+  # --- Persistencia ---
   defp load_users do
     File.mkdir_p!("data")
     if File.exists?(@data_file) do
