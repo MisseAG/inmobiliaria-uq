@@ -15,7 +15,8 @@ defmodule Inmobiliaria.CLI do
         > disconnect
 
       Propiedades (Vendedor/Arrendador):
-        > publish_property <tipo> <ubicación> <precio>
+        > publish_property <tipo> <ubicacion> <precio> <habitaciones> <area>
+
 
       Propiedades (Cliente):
         > list_properties

@@ -6,6 +6,7 @@ defmodule Inmobiliaria.Application do
     Inmobiliaria.FileStorage.init()
 
     children = [
+      {Registry, keys: :unique, name: Inmobiliaria.PropertyRegistry},
       Inmobiliaria.UserManager,
       Inmobiliaria.PropertySupervisor
     ]
