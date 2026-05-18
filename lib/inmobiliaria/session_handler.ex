@@ -23,10 +23,14 @@ defmodule Inmobiliaria.SessionHandler do
 
   # ---- publish_property ----
 
-  def execute_command(["publish_property", tipo, ubicacion, precio, habitaciones, area],
-                      username, role) do
+  def execute_command(
+        ["publish_property", tipo, ubicacion, precio, habitaciones, area],
+        username,
+        role
+      ) do
     with :ok <- validate_role(role, ["vendedor", "arrendador"]),
-         {:ok, pid, id} <- publish_property_impl(tipo, ubicacion, precio, habitaciones, area, username) do
+         {:ok, pid, id} <-
+           publish_property_impl(tipo, ubicacion, precio, habitaciones, area, username) do
       {:ok, "✓ Propiedad publicada. ID: #{id}, PID: #{inspect(pid)}"}
     else
       {:error, reason} -> {:error, reason}
@@ -35,8 +39,8 @@ defmodule Inmobiliaria.SessionHandler do
 
   def execute_command(["publish_property" | _], _username, role) do
     case validate_role(role, ["vendedor", "arrendador"]) do
-      :ok    -> {:error, "Uso: publish_property <tipo> <ubicacion> <precio> <habitaciones> <area>"}
-      error  -> error
+      :ok   -> {:error, "Uso: publish_property <tipo> <ubicacion> <precio> <habitaciones> <area>"}
+      error -> error
     end
   end
 
@@ -51,27 +55,15 @@ defmodule Inmobiliaria.SessionHandler do
 
   def execute_command(["buy_property", prop_id], username, role) do
     with :ok <- validate_role(role, ["cliente"]),
-         {:ok, info} <- Inmobiliaria.Property.get_info(prop_id),
-         {:ok, new_state} <- Inmobiliaria.Property.buy(prop_id) do
-
-      propietario = info.propietario
-
-      # Asignar puntos: +10 al cliente, +15 al propietario (responsable)
-      Inmobiliaria.UserManager.add_score(username, 10)
-      Inmobiliaria.UserManager.add_score(propietario, 15)
-
-      # Registrar en results.log
-      Inmobiliaria.ResultsLogger.log_operation("compra", prop_id, username, propietario)
-
+         {:ok, info} <- Inmobiliaria.PropertyServer.get_info(prop_id),
+         {:ok, new_state} <- Inmobiliaria.PropertyServer.buy(prop_id, username, info.propietario) do
       mensaje = """
       ✓ Propiedad #{prop_id} comprada exitosamente.
         Tipo: #{new_state.tipo} | Ubicación: #{new_state.ubicacion}
         Precio: $#{new_state.precio}
-        +10 puntos para ti | +15 puntos para #{propietario}
+        +10 puntos para ti | +15 puntos para #{info.propietario}
       """
       {:ok, String.trim(mensaje)}
-    else
-      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -87,29 +79,15 @@ defmodule Inmobiliaria.SessionHandler do
   def execute_command(["rent_property", prop_id, meses_str], username, role) do
     with :ok <- validate_role(role, ["cliente"]),
          {meses, ""} <- Integer.parse(meses_str),
-         {:ok, info} <- Inmobiliaria.Property.get_info(prop_id),
-         {:ok, new_state} <- Inmobiliaria.Property.rent(prop_id, meses) do
-
-      propietario = info.propietario
-
-      # Asignar puntos: +10 al cliente, +15 al propietario (responsable)
-      Inmobiliaria.UserManager.add_score(username, 10)
-      Inmobiliaria.UserManager.add_score(propietario, 15)
-
-      # Registrar en results.log
-      Inmobiliaria.ResultsLogger.log_operation("arriendo", prop_id, username, propietario)
-
+         {:ok, info} <- Inmobiliaria.PropertyServer.get_info(prop_id),
+         {:ok, new_state} <- Inmobiliaria.PropertyServer.rent(prop_id, meses, username, info.propietario) do
       mensaje = """
       ✓ Propiedad #{prop_id} arrendada por #{meses} mes(es).
         Tipo: #{new_state.tipo} | Ubicación: #{new_state.ubicacion}
         Precio mensual: $#{new_state.precio}
-        +10 puntos para ti | +15 puntos para #{propietario}
+        +10 puntos para ti | +15 puntos para #{info.propietario}
       """
       {:ok, String.trim(mensaje)}
-    else
-      :error          -> {:error, "Número de meses inválido"}
-      {_, _}          -> {:error, "Número de meses inválido"}
-      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -126,8 +104,7 @@ defmodule Inmobiliaria.SessionHandler do
   def execute_command(["send_message", prop_id | resto], username, _role) when resto != [] do
     mensaje = Enum.join(resto, " ")
 
-    # Obtener el propietario de la propiedad para saber el receptor
-    case Inmobiliaria.Property.get_info(prop_id) do
+    case Inmobiliaria.PropertyServer.get_info(prop_id) do
       {:ok, info} ->
         receptor = info.propietario
         case Inmobiliaria.MessageManager.send_message(prop_id, username, receptor, mensaje) do
@@ -146,7 +123,6 @@ defmodule Inmobiliaria.SessionHandler do
   end
 
   # ---- read_messages ----
-  # Solo el vendedor/arrendador puede leer los mensajes que le llegaron
 
   def execute_command(["read_messages"], username, role) do
     with :ok <- validate_role(role, ["vendedor", "arrendador"]),
@@ -178,15 +154,14 @@ defmodule Inmobiliaria.SessionHandler do
             end)
           {:ok, "── Ranking global ──\n#{texto}"}
         end
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
   # ---- ranking por rol ----
-  # Uso: ranking <rol>  (clientes | vendedores | arrendadores)
 
   def execute_command(["ranking", rol_arg], _username, _role) do
-    # Normalizar alias plurales
     role = case String.downcase(rol_arg) do
       "clientes"     -> "cliente"
       "vendedores"   -> "vendedor"
@@ -207,7 +182,8 @@ defmodule Inmobiliaria.SessionHandler do
             end)
           {:ok, "── Ranking #{role}s ──\n#{texto}"}
         end
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -215,7 +191,7 @@ defmodule Inmobiliaria.SessionHandler do
 
   def execute_command(["my_score"], username, _role) do
     case Inmobiliaria.UserManager.get_score(username) do
-      {:ok, score} -> {:ok, "Tu puntaje actual: #{score} pts"}
+      {:ok, score}     -> {:ok, "Tu puntaje actual: #{score} pts"}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -289,7 +265,6 @@ defmodule Inmobiliaria.SessionHandler do
         "  [#{p.id}] #{p.tipo} en #{p.ubicacion} — $#{p.precio} (#{p.estado}) | dueño: #{p.propietario}"
       end)
       |> Enum.join("\n")
-
     "Propiedades disponibles:\n#{filas}"
   end
 end
