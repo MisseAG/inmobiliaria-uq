@@ -1,72 +1,33 @@
 defmodule Inmobiliaria.CLI do
+  alias Inmobiliaria.CLI.UI
   def start do
-    IO.puts("""
-    ==================================================
-    ¡BIENVENIDO A LA INMOBILIARIA VIRTUAL!
-    ==================================================
-    Estado: Conectado al nodo #{node()}
-
-    COMANDOS DISPONIBLES:
-      Autenticación:
-        > register <usuario> <clave> <rol>
-        > connect <usuario> <clave>
-        > online
-        > disconnect
-
-      Propiedades (Vendedor/Arrendador):
-        > publish_property <tipo> <ubicacion> <precio> <habitaciones> <area>
-
-      Propiedades (Cliente):
-        > list_properties
-        > buy_property <id>
-        > rent_property <id> <meses>
-
-      Mensajes:
-        > send_message <prop_id> <mensaje>
-        > read_messages
-
-      Ranking:
-        > ranking
-        > ranking <rol>        (clientes | vendedores | arrendadores)
-        > my_score
-
-      Sistema:
-        > exit
-    --------------------------------------------------
-    """)
+    UI.print_welcome()
     loop(nil, nil)
   end
 
   defp loop(username, role) do
-    prompt =
-      if username do
-        "#{IO.ANSI.green()}#{username}#{IO.ANSI.reset()}" <>
-        "#{IO.ANSI.faint()}(#{role})#{IO.ANSI.reset()} " <>
-        "#{IO.ANSI.cyan()}>#{IO.ANSI.reset()} "
-      else
-        "#{IO.ANSI.yellow()}invitado#{IO.ANSI.reset()} #{IO.ANSI.cyan()}>#{IO.ANSI.reset()} "
-      end
-
     input =
-      IO.gets(prompt)
+      username
+      |> UI.build_prompt(role)
+      |> IO.gets()
       |> String.trim()
       |> String.split(" ", trim: true)
 
     case process_input(input, username, role) do
       {:ok, :exit} ->
-        IO.puts("Saliendo del sistema...")
+        UI.warn("Saliendo del sistema...")
 
       {:ok, :disconnect} ->
-        IO.puts("Sesión cerrada. Volviendo al menú principal...")
+        UI.success("Sesión cerrada. Volviendo al menú principal...")
         Process.sleep(800)
         start()
 
       {:ok, new_user, new_role, msg} ->
-        IO.puts(msg)
+        UI.success(msg)
         loop(new_user, new_role)
 
       {:error, reason} ->
-        IO.puts("Error: #{reason}")
+        UI.error(reason)
         loop(username, role)
     end
   end
