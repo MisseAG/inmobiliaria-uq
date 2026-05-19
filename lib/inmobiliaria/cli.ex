@@ -110,7 +110,7 @@ defmodule Inmobiliaria.CLI do
   # Se pasa username y role a SessionHandler para que pueda asignar puntos,
   # registrar operaciones y consultar el score del usuario actual.
 
-   defp process_input(input, username, role) when username != nil do
+  defp process_input(input, username, role) when username != nil do
     cleaned_input = Enum.map(input, &String.replace(&1, ~r/[<>]/, ""))
     case Inmobiliaria.SessionHandler.execute_command(cleaned_input, username, role) do
       {:ok, msg}    -> {:ok, username, role, msg}
@@ -120,11 +120,23 @@ defmodule Inmobiliaria.CLI do
 
   # ── Sin sesión activa ──────────────────────────────────────────────────────
 
-  defp process_input(_cmd, nil, nil) do
-    {:error, "Debe conectarse primero (usa 'connect <usuario> <clave>')"}
+  defp process_input(cmd, nil, nil) do
+    if is_known_command?(cmd) do
+      {:error, "Debe conectarse primero (usa 'connect <usuario> <clave>')"}
+    else
+      {:error, "Comando desconocido"}
+    end
   end
 
-  defp process_input(_, _username, _role) do
-    {:error, "Comando desconocido"}
+  # ── Validación de comandos conocidos ───────────────────────────────────────
+
+  defp is_known_command?([cmd | _]) do
+    cmd in [
+      # Comandos que requieren sesión
+      "publish_property", "list_properties", "buy_property", "rent_property",
+      "send_message", "read_messages", "ranking", "my_score"
+    ]
   end
+
+  defp is_known_command?(_), do: false
 end
