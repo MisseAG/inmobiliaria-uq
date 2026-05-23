@@ -38,7 +38,7 @@ defmodule Inmobiliaria.PropertyServer do
   def handle_call({:buy, id, cliente, propietario}, _from, state) do
     result =
       with {:ok, _info} <- Inmobiliaria.Property.get_info(id),
-           {:ok, new_state} <- Inmobiliaria.Property.buy(id) do
+           {:ok, new_state} <- Inmobiliaria.Property.buy(id, cliente) do
         Inmobiliaria.UserManager.add_score(cliente, 10)
         Inmobiliaria.UserManager.add_score(propietario, 15)
         Inmobiliaria.ResultsLogger.log_operation("compra", id, cliente, propietario)
@@ -51,7 +51,7 @@ defmodule Inmobiliaria.PropertyServer do
   def handle_call({:rent, id, meses, cliente, propietario}, _from, state) do
     result =
       with {:ok, _info} <- Inmobiliaria.Property.get_info(id),
-           {:ok, new_state} <- Inmobiliaria.Property.rent(id, meses) do
+           {:ok, new_state} <- Inmobiliaria.Property.rent(id, meses, cliente) do
         Inmobiliaria.UserManager.add_score(cliente, 10)
         Inmobiliaria.UserManager.add_score(propietario, 15)
         Inmobiliaria.ResultsLogger.log_operation("arriendo", id, cliente, propietario)

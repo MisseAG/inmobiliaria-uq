@@ -23,6 +23,7 @@ defmodule Inmobiliaria.CLI do
 
       Mensajes:
         > send_message <prop_id> <mensaje>
+        > send_message_to <cliente> <mensaje>
         > read_messages
 
       Ranking:

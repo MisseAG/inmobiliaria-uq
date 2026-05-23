@@ -30,17 +30,17 @@ defmodule Inmobiliaria.Property do
   end
 
   @doc "Ejecuta la compra de la propiedad. Cambia estado: disponible → vendida."
-  def buy(id) do
+  def buy(id, cliente \\ nil) do
     case find_pid(id) do
-      {:ok, pid} -> GenServer.call(pid, :buy)
+      {:ok, pid} -> GenServer.call(pid, {:buy, cliente})
       error -> error
     end
   end
 
   @doc "Ejecuta el arriendo de la propiedad por `meses` meses. Cambia estado: disponible → arrendada."
-  def rent(id, meses) do
+  def rent(id, meses, cliente \\ nil) do
     case find_pid(id) do
-      {:ok, pid} -> GenServer.call(pid, {:rent, meses})
+      {:ok, pid} -> GenServer.call(pid, {:rent, meses, cliente})
       error -> error
     end
   end
@@ -66,7 +66,9 @@ defmodule Inmobiliaria.Property do
       habitaciones: attrs["habitaciones"],
       area: attrs["area"],
       estado: :disponible,
-      propietario: attrs["propietario"]
+      propietario: attrs["propietario"],
+      cliente_comprador: nil,
+      cliente_arrendatario: nil
     }
 
     {:ok, state}
@@ -95,11 +97,11 @@ defmodule Inmobiliaria.Property do
   end
 
   @impl true
-  def handle_call(:buy, _from, state) do
+  def handle_call({:buy, cliente}, _from, state) do
     case state.estado do
       :disponible ->
-        new_state = %{state | estado: :vendida}
-        Logger.info("Propiedad #{state.id} vendida.")
+        new_state = %{state | estado: :vendida, cliente_comprador: cliente}
+        Logger.info("Propiedad #{state.id} vendida a #{cliente}.")
         {:reply, {:ok, new_state}, new_state}
 
       :vendida ->
@@ -114,11 +116,11 @@ defmodule Inmobiliaria.Property do
   end
 
   @impl true
-  def handle_call({:rent, meses}, _from, state) do
+  def handle_call({:rent, meses, cliente}, _from, state) do
     case state.estado do
       :disponible ->
-        new_state = state |> Map.put(:estado, :arrendada) |> Map.put(:meses, meses)
-        Logger.info("Propiedad #{state.id} arrendada por #{meses} meses.")
+        new_state = state |> Map.put(:estado, :arrendada) |> Map.put(:meses, meses) |> Map.put(:cliente_arrendatario, cliente)
+        Logger.info("Propiedad #{state.id} arrendada a #{cliente} por #{meses} meses.")
         {:reply, {:ok, new_state}, new_state}
 
       :arrendada ->

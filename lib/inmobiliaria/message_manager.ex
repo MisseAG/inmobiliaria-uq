@@ -79,7 +79,11 @@ defmodule Inmobiliaria.MessageManager do
       |> Enum.filter(fn m -> m.receptor == username end)
       |> Enum.sort_by(fn m -> m.timestamp end)
       |> Enum.map(fn m ->
-        "[#{m.timestamp}] De #{m.emisor} (prop #{m.prop_id}): #{m.mensaje}"
+        if m.prop_id == "DIRECT" do
+          "[#{m.timestamp}] De #{m.emisor}: #{m.mensaje}"
+        else
+          "[#{m.timestamp}] De #{m.emisor} (prop #{m.prop_id}): #{m.mensaje}"
+        end
       end)
 
     {:reply, {:ok, mis_mensajes}, state}

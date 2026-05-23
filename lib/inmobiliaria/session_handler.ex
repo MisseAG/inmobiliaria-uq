@@ -100,13 +100,17 @@ defmodule Inmobiliaria.SessionHandler do
 
   # ---- send_message ----
   # Sintaxis: send_message <prop_id> <mensaje con espacios>
+  # Lógica de receptor:
+  #   - Si propiedad está :disponible → envía al propietario (cliente → vendedor)
+  #   - Si propiedad está :vendida → envía al cliente_comprador (vendedor → cliente)
+  #   - Si propiedad está :arrendada → envía al cliente_arrendatario (vendedor → cliente)
 
   def execute_command(["send_message", prop_id | resto], username, _role) when resto != [] do
     mensaje = Enum.join(resto, " ")
 
     case Inmobiliaria.PropertyServer.get_info(prop_id) do
       {:ok, info} ->
-        receptor = info.propietario
+        receptor = determine_receptor(info)
         case Inmobiliaria.MessageManager.send_message(prop_id, username, receptor, mensaje) do
           :ok ->
             {:ok, "✓ Mensaje enviado a #{receptor} sobre la propiedad #{prop_id}."}
@@ -122,11 +126,25 @@ defmodule Inmobiliaria.SessionHandler do
     {:error, "Uso: send_message <prop_id> <mensaje>"}
   end
 
-  # ---- read_messages ----
+  # ---- send_message_to (mensaje directo a cliente) ----
 
-  def execute_command(["read_messages"], username, role) do
-    with :ok <- validate_role(role, ["vendedor", "arrendador"]),
-         {:ok, mensajes} <- Inmobiliaria.MessageManager.read_messages(username) do
+  def execute_command(["send_message_to", cliente | resto], username, _role) when resto != [] do
+    mensaje = Enum.join(resto, " ")
+
+    case Inmobiliaria.MessageManager.send_message("DIRECT", username, cliente, mensaje) do
+      :ok ->
+        {:ok, "✓ Mensaje enviado directamente a #{cliente}."}
+      {:error, reason} ->
+        {:error, "No se pudo enviar el mensaje: #{reason}"}
+    end
+  end
+
+  def execute_command(["send_message_to" | _], _username, _role) do
+    {:error, "Uso: send_message_to <cliente> <mensaje>"}
+  end
+
+  def execute_command(["read_messages"], username, _role) do
+    with {:ok, mensajes} <- Inmobiliaria.MessageManager.read_messages(username) do
       if Enum.empty?(mensajes) do
         {:ok, "No tienes mensajes."}
       else
@@ -212,7 +230,20 @@ defmodule Inmobiliaria.SessionHandler do
     end
   end
 
-  # ── Helpers de publicación ─────────────────────────────────────────────────
+  # ── Helpers ────────────────────────────────────────────────────────────────
+
+  defp determine_receptor(info) do
+    case info.estado do
+      :vendida ->
+        info.cliente_comprador
+
+      :arrendada ->
+        info.cliente_arrendatario
+
+      _ ->
+        info.propietario
+    end
+  end
 
   defp publish_property_impl(tipo, ubicacion, precio_str, hab_str, area_str, propietario) do
     precio       = parse_number(precio_str)
