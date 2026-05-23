@@ -1,4 +1,5 @@
 defmodule Inmobiliaria.CLI do
+  alias Inmobiliaria.CLI.UI
   def start do
     IO.puts("""
     ==================================================
@@ -23,7 +24,6 @@ defmodule Inmobiliaria.CLI do
 
       Mensajes:
         > send_message <prop_id> <mensaje>
-        > send_message_to <cliente> <mensaje>
         > read_messages
 
       Ranking:
@@ -39,35 +39,28 @@ defmodule Inmobiliaria.CLI do
   end
 
   defp loop(username, role) do
-    prompt =
-      if username do
-        "#{IO.ANSI.green()}#{username}#{IO.ANSI.reset()}" <>
-        "#{IO.ANSI.faint()}(#{role})#{IO.ANSI.reset()} " <>
-        "#{IO.ANSI.cyan()}>#{IO.ANSI.reset()} "
-      else
-        "#{IO.ANSI.yellow()}invitado#{IO.ANSI.reset()} #{IO.ANSI.cyan()}>#{IO.ANSI.reset()} "
-      end
-
     input =
-      IO.gets(prompt)
+      username
+      |> UI.build_prompt(role)
+      |> IO.gets()
       |> String.trim()
       |> String.split(" ", trim: true)
 
     case process_input(input, username, role) do
       {:ok, :exit} ->
-        IO.puts("Saliendo del sistema...")
+        UI.warn("Saliendo del sistema...")
 
       {:ok, :disconnect} ->
-        IO.puts("Sesión cerrada. Volviendo al menú principal...")
+        UI.success("Sesión cerrada. Volviendo al menú principal...")
         Process.sleep(800)
         start()
 
       {:ok, new_user, new_role, msg} ->
-        IO.puts(msg)
+        UI.success(msg)
         loop(new_user, new_role)
 
       {:error, reason} ->
-        IO.puts("Error: #{reason}")
+        UI.error(reason)
         loop(username, role)
     end
   end
@@ -111,7 +104,7 @@ defmodule Inmobiliaria.CLI do
   # Se pasa username y role a SessionHandler para que pueda asignar puntos,
   # registrar operaciones y consultar el score del usuario actual.
 
-   defp process_input(input, username, role) when username != nil do
+  defp process_input(input, username, role) when username != nil do
     cleaned_input = Enum.map(input, &String.replace(&1, ~r/[<>]/, ""))
     case Inmobiliaria.SessionHandler.execute_command(cleaned_input, username, role) do
       {:ok, msg}    -> {:ok, username, role, msg}
@@ -121,11 +114,23 @@ defmodule Inmobiliaria.CLI do
 
   # ── Sin sesión activa ──────────────────────────────────────────────────────
 
-  defp process_input(_cmd, nil, nil) do
-    {:error, "Debe conectarse primero (usa 'connect <usuario> <clave>')"}
+  defp process_input(cmd, nil, nil) do
+    if is_known_command?(cmd) do
+      {:error, "Debe conectarse primero (usa 'connect <usuario> <clave>')"}
+    else
+      {:error, "Comando desconocido"}
+    end
   end
 
-  defp process_input(_, _username, _role) do
-    {:error, "Comando desconocido"}
+  # ── Validación de comandos conocidos ───────────────────────────────────────
+
+  defp is_known_command?([cmd | _]) do
+    cmd in [
+      # Comandos que requieren sesión
+      "publish_property", "list_properties", "buy_property", "rent_property",
+      "send_message", "read_messages", "ranking", "my_score"
+    ]
   end
+
+  defp is_known_command?(_), do: false
 end
