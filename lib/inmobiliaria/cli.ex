@@ -1,40 +1,7 @@
 defmodule Inmobiliaria.CLI do
   alias Inmobiliaria.CLI.UI
   def start do
-    IO.puts("""
-    ==================================================
-    ¡BIENVENIDO A LA INMOBILIARIA VIRTUAL!
-    ==================================================
-    Estado: Conectado al nodo #{node()}
-
-    COMANDOS DISPONIBLES:
-      Autenticación:
-        > register <usuario> <clave> <rol>
-        > connect <usuario> <clave>
-        > online
-        > disconnect
-
-      Propiedades (Vendedor/Arrendador):
-        > publish_property <tipo> <ubicacion> <precio> <habitaciones> <area>
-
-      Propiedades (Cliente):
-        > list_properties
-        > buy_property <id>
-        > rent_property <id> <meses>
-
-      Mensajes:
-        > send_message <prop_id> <mensaje>
-        > read_messages
-
-      Ranking:
-        > ranking
-        > ranking <rol>        (clientes | vendedores | arrendadores)
-        > my_score
-
-      Sistema:
-        > exit
-    --------------------------------------------------
-    """)
+    UI.print_welcome()
     loop(nil, nil)
   end
 
