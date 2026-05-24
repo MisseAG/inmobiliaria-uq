@@ -62,6 +62,37 @@ defmodule Inmobiliaria.PropertyManager do
     end
   end
 
+  @doc """
+  Actualiza el estado de una propiedad en el archivo properties.dat.
+  Estados válidos: :disponible, :vendida, :arrendada.
+  Retorna :ok o {:error, reason}
+  """
+  def update_property_status(id, new_estado) do
+    try do
+      lines = Inmobiliaria.FileStorage.read_lines(@properties_file)
+
+      updated_lines = Enum.map(lines, fn line ->
+        parts = String.split(line, ";", trim: true)
+        case parts do
+          [^id | rest] ->
+            # Reemplaza el último campo (estado) con el nuevo
+            [id | Enum.drop(rest, -1) ++ [to_string(new_estado)]]
+            |> Enum.join(";")
+          _ ->
+            line
+        end
+      end)
+
+      # Reescribe el archivo completo
+      path = Path.join("data", @properties_file)
+      content = Enum.join(updated_lines, "\n")
+      File.write!(path, content <> "\n")
+      :ok
+    rescue
+      _ -> {:error, "No se pudo actualizar la propiedad"}
+    end
+  end
+
   # --- Funciones privadas ---
 
   defp validate_attrs(attrs) do
@@ -146,5 +177,3 @@ defmodule Inmobiliaria.PropertyManager do
 
   defp matches_criteria?(nil, _criteria), do: false
 end
-
-

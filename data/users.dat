@@ -3,6 +3,6 @@ alejo;123;cliente;0
 ana;4321;cliente;0
 arrendador1;pass123;arrendador;15
 carlos;1234;vendedor;0
-cliente1;pass123;cliente;10
+cliente1;pass123;cliente;20
 cliente2;pass321;cliente;10
-vendedor1;pass123;vendedor;15
+vendedor1;pass123;vendedor;30

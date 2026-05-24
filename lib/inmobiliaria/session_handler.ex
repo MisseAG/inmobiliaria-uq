@@ -290,12 +290,20 @@ defmodule Inmobiliaria.SessionHandler do
   end
 
   defp format_properties_list(propiedades) do
-    filas =
-      propiedades
-      |> Enum.map(fn p ->
-        "  [#{p.id}] #{p.tipo} en #{p.ubicacion} — $#{p.precio} (#{p.estado}) | dueño: #{p.propietario}"
-      end)
-      |> Enum.join("\n")
-    "Propiedades disponibles:\n#{filas}"
+    # Filtrar solo propiedades disponibles para compra/arriendo
+    disponibles = Enum.filter(propiedades, &(&1.estado == :disponible))
+
+    case disponibles do
+      [] ->
+        "No hay propiedades disponibles en este momento."
+      props ->
+        filas =
+          props
+          |> Enum.map(fn p ->
+            "  [#{p.id}] #{p.tipo} en #{p.ubicacion} — $#{p.precio} | dueño: #{p.propietario}"
+          end)
+          |> Enum.join("\n")
+        "Propiedades disponibles:\n#{filas}"
+    end
   end
 end

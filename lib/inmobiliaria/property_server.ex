@@ -42,6 +42,7 @@ defmodule Inmobiliaria.PropertyServer do
         Inmobiliaria.UserManager.add_score(cliente, 10)
         Inmobiliaria.UserManager.add_score(propietario, 15)
         Inmobiliaria.ResultsLogger.log_operation("compra", id, cliente, propietario)
+        Inmobiliaria.PropertyManager.update_property_status(id, :vendida)
         {:ok, new_state}
       end
     {:reply, result, state}
@@ -55,6 +56,7 @@ defmodule Inmobiliaria.PropertyServer do
         Inmobiliaria.UserManager.add_score(cliente, 10)
         Inmobiliaria.UserManager.add_score(propietario, 15)
         Inmobiliaria.ResultsLogger.log_operation("arriendo", id, cliente, propietario)
+        Inmobiliaria.PropertyManager.update_property_status(id, :arrendada)
         {:ok, new_state}
       end
     {:reply, result, state}
