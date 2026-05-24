@@ -69,7 +69,9 @@ defmodule Inmobiliaria.PropertyManager do
   """
   def update_property_status(id, new_estado) do
     try do
-      lines = Inmobiliaria.FileStorage.read_lines(@properties_file)
+      path = Path.join("data", @properties_file)
+      content = File.read!(path)
+      lines = String.split(content, "\n", trim: true)
 
       updated_lines = Enum.map(lines, fn line ->
         parts = String.split(line, ";", trim: true)
@@ -83,10 +85,9 @@ defmodule Inmobiliaria.PropertyManager do
         end
       end)
 
-      # Reescribe el archivo completo
-      path = Path.join("data", @properties_file)
-      content = Enum.join(updated_lines, "\n")
-      File.write!(path, content <> "\n")
+      # Reescribe el archivo preservando correctamente
+      new_content = Enum.join(updated_lines, "\n") <> "\n"
+      File.write!(path, new_content)
       :ok
     rescue
       _ -> {:error, "No se pudo actualizar la propiedad"}
@@ -123,13 +124,14 @@ defmodule Inmobiliaria.PropertyManager do
   end
 
   defp format_property_line(attrs) do
+    precio_str = attrs["precio"] |> Float.round(2) |> Float.to_string()
     [
       attrs["id"],
       attrs["propietario"],
       attrs["tipo"],
       attrs["modalidad"],
       attrs["ubicacion"],
-      to_string(attrs["precio"]),
+      precio_str,
       to_string(attrs["habitaciones"]),
       to_string(attrs["area"]),
       "disponible"

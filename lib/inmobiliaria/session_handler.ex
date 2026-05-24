@@ -48,7 +48,12 @@ defmodule Inmobiliaria.SessionHandler do
 
   def execute_command(["list_properties" | _], _username, _role) do
     propiedades = Inmobiliaria.PropertyManager.list_all()
-    {:ok, format_properties_list(propiedades)}
+    disponibles = Enum.filter(propiedades, &(&1.estado == :disponible))
+    if Enum.empty?(disponibles) do
+      {:ok, "No hay propiedades disponibles para compra en este momento."}
+    else
+      {:ok, format_properties_list(disponibles)}
+    end
   end
 
   # ---- buy_property ----
@@ -255,7 +260,7 @@ defmodule Inmobiliaria.SessionHandler do
       is_nil(habitaciones) -> {:error, "Habitaciones debe ser un entero válido"}
       is_nil(area)         -> {:error, "Área debe ser un número válido"}
       true ->
-        id = "prop_#{:os.system_time(:millisecond)}"
+        id = "p_#{:os.system_time(:second)}_#{Enum.random(1000..9999)}"
         attrs = %{
           "id"           => id,
           "tipo"         => tipo,
@@ -290,20 +295,13 @@ defmodule Inmobiliaria.SessionHandler do
   end
 
   defp format_properties_list(propiedades) do
-    # Filtrar solo propiedades disponibles para compra/arriendo
-    disponibles = Enum.filter(propiedades, &(&1.estado == :disponible))
-
-    case disponibles do
-      [] ->
-        "No hay propiedades disponibles en este momento."
-      props ->
-        filas =
-          props
-          |> Enum.map(fn p ->
-            "  [#{p.id}] #{p.tipo} en #{p.ubicacion} — $#{p.precio} | dueño: #{p.propietario}"
-          end)
-          |> Enum.join("\n")
-        "Propiedades disponibles:\n#{filas}"
-    end
+    filas =
+      propiedades
+      |> Enum.map(fn p ->
+        estado_display = if p.estado == :disponible, do: "✓", else: "✗ #{p.estado}"
+        "  [#{p.id}] #{p.tipo} en #{p.ubicacion} — $#{p.precio} [#{estado_display}] | dueño: #{p.propietario}"
+      end)
+      |> Enum.join("\n")
+    "Propiedades registradas:\n#{filas}"
   end
 end
