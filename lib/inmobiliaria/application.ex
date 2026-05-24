@@ -16,6 +16,7 @@ defmodule Inmobiliaria.Application do
     opts = [strategy: :one_for_one, name: Inmobiliaria.Supervisor]
     {:ok, pid} = Supervisor.start_link(children, opts)
 
+    Process.sleep(100)
     recargar_propiedades()
 
     {:ok, pid}

@@ -1,2 +1,4 @@
-prop_1779075915255;vendedor1;casa;venta;Armenia;2.5e5;3;120.0;disponible
-prop_1779079290547;arrendador1;apartamento;venta;Medellin;8.0e5;2;65.0;disponible
+p_1779592300_8860;vendedor1;casa;venta;Barranquilla;4.0e6;1;10.0;disponible
+p_1779592390_7518;carlos;apartamento;venta;Medellin;5.0e6;2;300.0;vendida
+p_1779592475_3832;vendedor1;casa;venta;Armenia;2.0e6;4;200.0;disponible
+p_1779592548_1200;arrendador1;casa;venta;Bogotá;1.0e4;6;1.0e4;disponible
