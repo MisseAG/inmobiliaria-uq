@@ -7,7 +7,7 @@
 
 
 ## Clientes en otras terminales en la carpeta raíz del proyecto:
-    \inmobiliria_uq> iex.bat --sname cli1 --cookie chocolate -S mix
+    \inmobiliria_uq> iex.bat --sname cli1 --cookie chocolate -S mix run --no-start
 
 ### 1. Conectar al servidor (usar el nombre que aparezca en el prompt del servidor)
     Node.connect(:"serv@nombrepc") 
