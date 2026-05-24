@@ -26,7 +26,10 @@ defmodule Inmobiliaria.CLI.UI do
       #{ANSI.white()}> rent_property <id> <meses>#{ANSI.reset()}
 
     #{ANSI.yellow()}Mensajes:#{ANSI.reset()}
+      #{ANSI.light_cyan()}Enviar mensaje a propiedad:#{ANSI.reset()}
       #{ANSI.white()}> send_message <prop_id> <mensaje>#{ANSI.reset()}
+      #{ANSI.light_cyan()}Enviar mensaje a cliente:#{ANSI.reset()}
+      #{ANSI.white()}> send_message_to <cliente> <mensaje>#{ANSI.reset()}
       #{ANSI.white()}> read_messages#{ANSI.reset()}
 
     #{ANSI.green()}Ranking:#{ANSI.reset()}
@@ -36,7 +39,7 @@ defmodule Inmobiliaria.CLI.UI do
 
     #{ANSI.red()}Sistema:#{ANSI.reset()}
       #{ANSI.white()}> exit#{ANSI.reset()}
-  #{ANSI.cyan()}--------------------------------------------------#{ANSI.reset()}
+  #{ANSI.cyan_background()}#{ANSI.black()}--------------------------------------------------#{ANSI.reset()}
   """
 end
 
