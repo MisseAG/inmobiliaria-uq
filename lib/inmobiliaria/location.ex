@@ -1,5 +1,14 @@
 defmodule Inmobiliaria.Location do
-  @locations ["Armenia", "Bogotá", "Medellín", "Cali", "Barranquilla"]
+  @file_path Path.expand("data/locations.dat")
+
+  @external_resource @file_path
+
+  @locations (
+    @file_path
+    |> File.read!()
+    |> String.split("\n", trim: true)
+    |> Enum.map(&String.trim/1)
+  )
 
   # Generamos una lista sin tildes y en minúsculas para facilitar la comparación
   @normalized_locations Enum.map(@locations,
